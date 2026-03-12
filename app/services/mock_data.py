@@ -1,0 +1,30 @@
+COMPANIES = [
+    {"id": 1, "name": "Petrobras", "sector": "Energia",
+     "revenue": 500_000_000_000, "employees": 45000,
+     "city": "Rio de Janeiro", "state": "RJ"},
+    {"id": 2, "name": "Ambev", "sector": "Bebidas",
+     "revenue": 80_000_000_000, "employees": 35000,
+     "city": "São Paulo", "state": "SP"},
+    {"id": 3, "name": "Magazine Luiza", "sector": "Varejo",
+     "revenue": 40_000_000_000, "employees": 28000,
+     "city": "Franca", "state": "SP"},
+    {"id": 4, "name": "Embraer", "sector": "Aviação",
+     "revenue": 25_000_000_000, "employees": 18000,
+     "city": "São José dos Campos", "state": "SP"},
+    {"id": 5, "name": "WEG", "sector": "Energia",
+     "revenue": 30_000_000_000, "employees": 40000,
+     "city": "Jaraguá do Sul", "state": "SC"},
+]
+
+CITIES = [
+    {"id": 1, "name": "São Paulo", "state": "SP",
+     "population": 12_300_000, "gdp": 750_000},
+    {"id": 2, "name": "Rio de Janeiro", "state": "RJ",
+     "population": 6_700_000, "gdp": 364_000},
+    {"id": 3, "name": "Belo Horizonte", "state": "MG",
+     "population": 2_500_000, "gdp": 95_000},
+    {"id": 4, "name": "Curitiba", "state": "PR",
+     "population": 1_960_000, "gdp": 85_000},
+    {"id": 5, "name": "Uberlândia", "state": "MG",
+     "population": 700_000, "gdp": 42_000},
+]
