@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.company import Company as CompanyModel
 from app.schemas.company import Company, CompanyList
-from app.services.mock_data import COMPANIES
 
 router = APIRouter(
     prefix="/companies",
@@ -12,25 +14,36 @@ router = APIRouter(
 def list_companies(
     sector: str | None = Query(default=None, description="Filtrar por setor"),
     name: str | None = Query(default=None, description="Buscar por nome"),
+    page: int = Query(default=1, ge=1, description="Número da página"),
+    limit: int = Query(default=20, ge=1, le=100, description="Itens por página"),
+    db: Session = Depends(get_db),
 ):
-    """Lista todas as empresas com filtros opcionais."""
-    results = COMPANIES
+    """Lista empresas com filtros e paginação."""
+    query = db.query(CompanyModel)
 
+    # Aplica filtros
     if sector:
-        results = [c for c in results if c["sector"].lower() == sector.lower()]
+        query = query.filter(CompanyModel.sector.ilike(f"%{sector}%"))
 
     if name:
-        results = [c for c in results if name.lower() in c["name"].lower()]
+        query = query.filter(CompanyModel.name.ilike(f"%{name}%"))
 
-    return CompanyList(data=results, total=len(results))
+    # Conta o total ANTES de paginar
+    total = query.count()
+
+    # Aplica paginação
+    skip = (page - 1) * limit
+    results = query.offset(skip).limit(limit).all()
+
+    return CompanyList(data=results, total=total, page=page, limit=limit)
 
 
 @router.get("/{company_id}", response_model=Company)
-def get_company(company_id: int):
+def get_company(company_id: int, db: Session = Depends(get_db)):
     """Busca uma empresa pelo ID."""
-    for company in COMPANIES:
-        if company["id"] == company_id:
-            return company
+    company = db.query(CompanyModel).filter(CompanyModel.id == company_id).first()
 
-    from fastapi import HTTPException
-    raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    return company
