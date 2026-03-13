@@ -5,3 +5,7 @@ __pycache__/
 .idea/
 .vscode/
 *.db
+test_database.db
+.pytest_cache/
+htmlcov/
+.coverage
