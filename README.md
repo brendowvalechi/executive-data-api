@@ -37,7 +37,7 @@ construída com FastAPI, SQLAlchemy e Redis.
 
 ```bash
 # Clone o repositório
-git clone https://github.com/SEU_USUARIO/executive-data-api.git
+git clone https://github.com/brendowvalechi/executive-data-api.git
 cd executive-data-api
 
 # Crie e ative o ambiente virtual
