@@ -1,16 +1,18 @@
+import os
 import json
 import hashlib
-from functools import wraps
 from typing import Any
 import redis
-from fastapi import Request, Response
 
-# Conexão com o Redis
+# Conexão com o Redis (via variável de ambiente ou localhost)
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+
 redis_client = redis.Redis(
-    host="localhost",
-    port=6379,
+    host=REDIS_HOST,
+    port=REDIS_PORT,
     db=0,
-    decode_responses=True,  # retorna strings em vez de bytes
+    decode_responses=True,
 )
 
 

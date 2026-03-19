@@ -1,5 +1,7 @@
 # 📊 Executive Data API
 
+![CI](https://github.com/brendowvalechi/executive-data-api/actions/workflows/ci.yml/badge.svg)
+
 API REST de dados empresariais e urbanos para dashboards e relatórios,
 construída com FastAPI, SQLAlchemy e Redis.
 
