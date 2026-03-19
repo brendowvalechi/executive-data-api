@@ -122,3 +122,7 @@ executive-data-api/
 │   └── benchmark.py     # Medir performance
 └── requirements.txt
 ```
+
+## 🔗 Projetos relacionados
+
+- [Data Harvester](https://github.com/brendowvalechi/data-harvester) - Motor de coleta assíncrono que alimenta esta API
