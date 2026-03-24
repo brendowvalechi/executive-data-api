@@ -5,6 +5,8 @@
 API REST de dados empresariais e urbanos para dashboards e relatórios,
 construída com FastAPI, SQLAlchemy e Redis.
 
+> 🌐 **API ao vivo:** [http://15.228.119.92/docs](http://15.228.119.92/docs)
+
 ## ✨ Funcionalidades
 
 - **CRUD completo** de empresas e cidades brasileiras
@@ -16,6 +18,8 @@ construída com FastAPI, SQLAlchemy e Redis.
 - **Cache com Redis**: redução de 3-7x no tempo de resposta
 - **Validação rigorosa**: Pydantic + Enum com mensagens de erro claras
 - **Testes automatizados**: pytest com cobertura > 80%
+- **CI/CD**: GitHub Actions roda testes a cada push
+- **Deploy**: Docker + Nginx na AWS EC2
 - **Documentação automática**: Swagger UI interativa
 
 ## 🛠️ Stack
@@ -27,18 +31,26 @@ construída com FastAPI, SQLAlchemy e Redis.
 | **SQLAlchemy** | ORM para banco de dados |
 | **SQLite** | Banco de dados relacional |
 | **Redis** | Cache em memória com TTL |
+| **Docker** | Containerização da aplicação |
+| **GitHub Actions** | CI/CD com testes automáticos |
+| **AWS EC2 + Nginx** | Deploy em produção |
 | **pytest + httpx** | Testes automatizados |
 
 ## 🚀 Como rodar
 
-### Pré-requisitos
-- Python 3.10+
-- Redis (ou Memurai no Windows)
-
-### Instalação
+### Opção 1: Docker (recomendado)
 
 ```bash
-# Clone o repositório
+git clone https://github.com/brendowvalechi/executive-data-api.git
+cd executive-data-api
+docker-compose up -d --build
+```
+
+Acesse: http://localhost:8000/docs
+
+### Opção 2: Local
+
+```bash
 git clone https://github.com/brendowvalechi/executive-data-api.git
 cd executive-data-api
 
@@ -57,9 +69,9 @@ python scripts/seed.py
 uvicorn app.main:app --reload
 ```
 
-### Acesse
-- API: http://127.0.0.1:8000
-- Documentação: http://127.0.0.1:8000/docs
+Acesse: http://127.0.0.1:8000/docs
+
+> Pré-requisitos: Python 3.10+ e Redis (ou Memurai no Windows)
 
 ## 📋 Endpoints
 
@@ -91,9 +103,12 @@ GET /companies/?search=energia
 
 | Endpoint | Sem cache | Com cache | Melhoria |
 |----------|-----------|-----------|----------|
-| `/companies/` | ~73ms | ~10ms | 7x |
+| `/companies/` | ~73ms | ~10ms | 7.2x |
+| `/companies/?sector=Tecnologia&sort_by=revenue&order=desc` | ~35ms | ~12ms | 3.0x |
 | `/companies/stats` | ~35ms | ~13ms | 2.7x |
 | `/cities/` | ~31ms | ~8ms | 3.7x |
+| `/cities/?state=SP&sort_by=population&order=desc` | ~24ms | ~13ms | 1.8x |
+| `/cities/stats` | ~22ms | ~13ms | 1.7x |
 
 *Cache com Redis e TTL de 60s (listagens) e 300s (stats).*
 
@@ -107,10 +122,14 @@ pytest -v
 pytest --cov=app --cov-report=term-missing -v
 ```
 
+36 testes cobrindo: happy path, filtros, paginação, ordenação, busca, stats, erros 404/422.
+
 ## 📁 Estrutura
 
 ```
 executive-data-api/
+├── .github/workflows/
+│   └── ci.yml           # GitHub Actions CI
 ├── app/
 │   ├── main.py          # Ponto de entrada
 │   ├── database.py      # Configuração SQLAlchemy
@@ -122,6 +141,8 @@ executive-data-api/
 ├── scripts/
 │   ├── seed.py          # Popular banco
 │   └── benchmark.py     # Medir performance
+├── Dockerfile           # Build multi-stage
+├── docker-compose.yml   # API + Redis
 └── requirements.txt
 ```
 
