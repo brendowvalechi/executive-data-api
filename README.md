@@ -1,151 +1,140 @@
 # 📊 Executive Data API
 
-![CI](https://github.com/brendowvalechi/executive-data-api/actions/workflows/ci.yml/badge.svg)
+API REST completa para dados de empresas e cidades,
+construída com FastAPI, SQLAlchemy, Redis e Docker.
 
-API REST de dados empresariais e urbanos para dashboards e relatórios,
-construída com FastAPI, SQLAlchemy e Redis.
+[![CI](https://github.com/brendowvalechi/executive-data-api/
+actions/workflows/ci.yml/badge.svg)]
+(https://github.com/brendowvalechi/executive-data-api/actions)
 
-> 🌐 **API ao vivo:** [http://15.228.119.92/docs](http://15.228.119.92/docs)
+🔗 **API ao vivo:** http://15.228.119.92/docs
 
-## ✨ Funcionalidades
+---
 
-- **CRUD completo** de empresas e cidades brasileiras
-- **Filtros avançados**: por setor, estado, faixa de receita, população
-- **Busca multi-campo**: pesquisa em nome, setor e cidade simultaneamente
-- **Ordenação dinâmica**: qualquer campo, ascendente ou descendente
-- **Paginação**: controle de page e limit em todos os endpoints
-- **Agregação**: estatísticas por setor e por estado (GROUP BY)
-- **Cache com Redis**: redução de 3-7x no tempo de resposta
-- **Validação rigorosa**: Pydantic + Enum com mensagens de erro claras
-- **Testes automatizados**: pytest com cobertura > 80%
-- **CI/CD**: GitHub Actions roda testes a cada push
-- **Deploy**: Docker + Nginx na AWS EC2
-- **Documentação automática**: Swagger UI interativa
+## 🚀 Funcionalidades
 
-## 🛠️ Stack
+- Endpoints REST para empresas e cidades com paginação
+- Filtros avançados (faixa min/max), ordenação dinâmica,
+  busca multi-campo
+- Estatísticas agregadas com GROUP BY (count, sum, avg)
+- Cache Redis com TTL configurável (3-7x mais rápido)
+- Health check com status de dependências
+- Logs estruturados com loguru (rotação diária)
+- Testes automatizados com pytest (cobertura > 70%)
+- CI/CD com GitHub Actions
+- Deploy com Docker na AWS EC2
 
-| Tecnologia | Uso |
-|---|---|
-| **FastAPI** | Framework web assíncrono |
-| **Pydantic v2** | Validação e serialização de dados |
-| **SQLAlchemy** | ORM para banco de dados |
-| **SQLite** | Banco de dados relacional |
-| **Redis** | Cache em memória com TTL |
-| **Docker** | Containerização da aplicação |
-| **GitHub Actions** | CI/CD com testes automáticos |
-| **AWS EC2 + Nginx** | Deploy em produção |
-| **pytest + httpx** | Testes automatizados |
+---
 
-## 🚀 Como rodar
+## 🏗️ Arquitetura
 
-### Opção 1: Docker (recomendado)
+```
+┌──────────┐    ┌─────────────┐    ┌─────────────┐
+│  Cliente │───▶│   Nginx     │───▶│   FastAPI   │
+│ (browser)│    │ (proxy rev.)│    │  (port 8000)│
+└──────────┘    └─────────────┘    └────┬────────┘
+                                       │
+                            ┌────────┴────────┐
+                            │                 │
+                     ┌─────┴─────┐  ┌────┴──────┐
+                     │  SQLite   │  │   Redis   │
+                     │ (dados)   │  │  (cache)  │
+                     └───────────┘  └───────────┘
+```
 
+---
+
+## 💻 Tecnologias
+
+| Tecnologia | Função |
+|------------|--------|
+| FastAPI | Framework web assíncrono |
+| Pydantic v2 | Validação de dados |
+| SQLAlchemy | ORM para banco de dados |
+| SQLite | Banco de dados relacional |
+| Redis | Cache em memória |
+| Docker | Containerização |
+| GitHub Actions | CI/CD |
+| AWS EC2 | Hospedagem em nuvem |
+| Nginx | Proxy reverso |
+| loguru | Logs estruturados |
+| pytest + httpx | Testes automatizados |
+
+---
+
+## ⚡ Performance (benchmark real)
+
+| Endpoint | Sem cache | Com cache | Speedup |
+|----------|-----------|-----------|---------|
+| /companies/ | 73ms | 10ms | 7.2x |
+| /companies/?filtros | 35ms | 12ms | 3.0x |
+| /companies/stats | 35ms | 13ms | 2.7x |
+| /cities/ | 31ms | 8ms | 3.7x |
+
+---
+
+## 🔧 Como rodar localmente
+
+### Pré-requisitos
+- Python 3.12+
+- Redis (ou Memurai no Windows)
+
+### Setup
 ```bash
 git clone https://github.com/brendowvalechi/executive-data-api.git
 cd executive-data-api
-docker-compose up -d --build
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+pip install -r requirements.txt
+python scripts/seed.py
+uvicorn app.main:app --reload
 ```
 
 Acesse: http://localhost:8000/docs
 
-### Opção 2: Local
-
+### Com Docker
 ```bash
-git clone https://github.com/brendowvalechi/executive-data-api.git
-cd executive-data-api
-
-# Crie e ative o ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-
-# Instale as dependências
-pip install -r requirements.txt
-
-# Popule o banco de dados
-python scripts/seed.py
-
-# Inicie a API
-uvicorn app.main:app --reload
+docker-compose up --build
 ```
 
-Acesse: http://127.0.0.1:8000/docs
-
-> Pré-requisitos: Python 3.10+ e Redis (ou Memurai no Windows)
-
-## 📋 Endpoints
-
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| GET | `/companies/` | Lista empresas (filtros, ordenação, paginação) |
-| GET | `/companies/{id}` | Busca empresa por ID |
-| GET | `/companies/stats` | Estatísticas por setor |
-| GET | `/cities/` | Lista cidades (filtros, ordenação, paginação) |
-| GET | `/cities/{id}` | Busca cidade por ID |
-| GET | `/cities/stats` | Estatísticas por estado |
-| GET | `/cache/status` | Status do Redis |
-| DELETE | `/cache/clear` | Limpa o cache |
-
-### Exemplos de uso
-
-```
-# Top 10 empresas de tecnologia por receita
-GET /companies/?sector=Tecnologia&sort_by=revenue&order=desc&limit=10
-
-# Cidades de SP com mais de 1M de habitantes
-GET /cities/?state=SP&min_population=1000000&sort_by=population&order=desc
-
-# Busca geral por "energia"
-GET /companies/?search=energia
-```
-
-## ⚡ Performance (Cache)
-
-| Endpoint | Sem cache | Com cache | Melhoria |
-|----------|-----------|-----------|----------|
-| `/companies/` | ~73ms | ~10ms | 7.2x |
-| `/companies/?sector=Tecnologia&sort_by=revenue&order=desc` | ~35ms | ~12ms | 3.0x |
-| `/companies/stats` | ~35ms | ~13ms | 2.7x |
-| `/cities/` | ~31ms | ~8ms | 3.7x |
-| `/cities/?state=SP&sort_by=population&order=desc` | ~24ms | ~13ms | 1.8x |
-| `/cities/stats` | ~22ms | ~13ms | 1.7x |
-
-*Cache com Redis e TTL de 60s (listagens) e 300s (stats).*
+---
 
 ## 🧪 Testes
-
 ```bash
-# Rodar testes
 pytest -v
-
-# Rodar com cobertura
-pytest --cov=app --cov-report=term-missing -v
 ```
+36 testes | Cobertura > 70%
 
-36 testes cobrindo: happy path, filtros, paginação, ordenação, busca, stats, erros 404/422.
+---
 
-## 📁 Estrutura
-
+## 📁 Estrutura do Projeto
 ```
 executive-data-api/
-├── .github/workflows/
-│   └── ci.yml           # GitHub Actions CI
 ├── app/
-│   ├── main.py          # Ponto de entrada
-│   ├── database.py      # Configuração SQLAlchemy
-│   ├── cache.py         # Integração Redis
-│   ├── models/          # Modelos do banco
-│   ├── schemas/         # Schemas Pydantic + Enums
-│   └── routers/         # Endpoints da API
-├── tests/               # Testes automatizados
+│   ├── main.py
+│   ├── database.py
+│   ├── cache.py
+│   ├── middleware.py
+│   ├── logging_config.py
+│   ├── models/
+│   ├── schemas/
+│   └── routers/
+├── tests/
 ├── scripts/
-│   ├── seed.py          # Popular banco
-│   └── benchmark.py     # Medir performance
-├── Dockerfile           # Build multi-stage
-├── docker-compose.yml   # API + Redis
-└── requirements.txt
+├── logs/
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
 ```
 
-## 🔗 Projetos relacionados
+---
 
-- [Data Harvester](https://github.com/brendowvalechi/data-harvester) - Motor de coleta assíncrono que alimenta esta API
+## 🔗 Projetos relacionados
+- [🔄 Data Harvester](https://github.com/brendowvalechi/
+  data-harvester) - Motor de coleta assíncrona que alimenta esta API
+
+---
+
+## 👨‍💻 Autor
+**Brendow Valechi** - [GitHub](https://github.com/brendowvalechi)

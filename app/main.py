@@ -1,7 +1,10 @@
+from app.logging_config import setup_logging
+setup_logging()
 from fastapi import FastAPI
 from app.cache import is_redis_available, redis_client, clear_cache
 from app.database import engine, Base
-from app.routers import companies, cities
+from app.routers import companies, cities, health
+from app.middleware import LoggingMiddleware
 
 # Cria as tabelas no banco (se ainda não existirem)
 Base.metadata.create_all(bind=engine)
@@ -9,11 +12,13 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Executive Data API",
     description="API de dados empresariais para dashboards e relatórios",
-    version="0.2.0",  # atualizado!
+    version="1.0.0",  # atualizado!
 )
 
+app.add_middleware(LoggingMiddleware)
 app.include_router(companies.router)
 app.include_router(cities.router)
+app.include_router(health.router)
 
 
 @app.get("/", tags=["Health"])
