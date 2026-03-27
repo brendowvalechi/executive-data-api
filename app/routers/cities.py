@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Query, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Query, Depends, HTTPException, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.cache import get_cache, set_cache, make_cache_key
@@ -23,12 +22,13 @@ def list_cities(
     max_population: int | None = Query(default=None, ge=0, description="População máxima"),
     min_gdp: float | None = Query(default=None, ge=0, description="PIB mínimo"),
     max_gdp: float | None = Query(default=None, ge=0, description="PIB máximo"),
-    search: str | None = Query(default=None, description="Busca em nome e estado"),
+    search: str | None = Query(default=None, max_length=100, description="Busca em nome e estado"),
     sort_by: CitySortBy = Query(default=CitySortBy.name, description="Campo para ordenar"),
     order: SortOrder = Query(default=SortOrder.asc, description="Direção"),
     page: int = Query(default=1, ge=1, description="Página"),
     limit: int = Query(default=20, ge=1, le=100, description="Itens por página"),
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
     """Lista cidades com filtros, ordenação, paginação e cache."""
 
@@ -43,9 +43,8 @@ def list_cities(
 
     cached = get_cache(cache_key)
     if cached:
-        response = JSONResponse(content=cached)
         response.headers["X-Cache"] = "HIT"
-        return response
+        return cached
 
     query = db.query(CityModel)
 
@@ -80,24 +79,23 @@ def list_cities(
     result = CityList(data=results, total=total, page=page, limit=limit)
     result_dict = result.model_dump()
 
+    # TTL de 60s pois a lista muda com frequência moderada
     set_cache(cache_key, result_dict, ttl=60)
 
-    response = JSONResponse(content=result_dict)
     response.headers["X-Cache"] = "MISS"
-    return response
+    return result
 
 
 @router.get("/stats", response_model=CityStats)
-def city_stats(db: Session = Depends(get_db)):
+def city_stats(db: Session = Depends(get_db), response: Response = None):
     """Estatísticas agregadas por estado (com cache de 5 min)."""
 
     cache_key = "cities:stats"
 
     cached = get_cache(cache_key)
     if cached:
-        response = JSONResponse(content=cached)
         response.headers["X-Cache"] = "HIT"
-        return response
+        return cached
 
     total = db.query(CityModel).count()
 
@@ -126,11 +124,11 @@ def city_stats(db: Session = Depends(get_db)):
     result = CityStats(total_cities=total, states=states)
     result_dict = result.model_dump()
 
+    # TTL de 300s (5 min) pois estatísticas agregadas mudam com muito menos frequência
     set_cache(cache_key, result_dict, ttl=300)
 
-    response = JSONResponse(content=result_dict)
     response.headers["X-Cache"] = "MISS"
-    return response
+    return result
 
 
 

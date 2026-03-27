@@ -1,8 +1,9 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-# SQLite vai criar um arquivo "database.db" na raiz do projeto
-DATABASE_URL = "sqlite:///database.db"
+# SQLite vai criar um arquivo "database.db" na raiz do projeto (configurável via env)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///database.db")
 
 engine = create_engine(
     DATABASE_URL,

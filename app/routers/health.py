@@ -32,14 +32,8 @@ def check_cache() -> DependencyStatus:
     """Verifica conexão com o Redis/Memurai."""
     start = time.time()
     try:
-        from app.cache import get_redis_client
-        client = get_redis_client()
-        if client is None:
-            return DependencyStatus(
-                status="unhealthy",
-                error="Redis client not available"
-            )
-        client.ping()
+        from app.cache import redis_client
+        redis_client.ping()
         latency = (time.time() - start) * 1000
         return DependencyStatus(status="healthy", latency_ms=round(latency, 2))
     except Exception as e:
@@ -73,7 +67,7 @@ def health_check():
         cache=cache_status,
     )
 
-    logger.info("Health check: {} (db={}, cache={})",
-               overall, db_status.status, cache_status.status)
+    logger.debug("Health check: {} (db={}, cache={})",
+                overall, db_status.status, cache_status.status)
 
     return health

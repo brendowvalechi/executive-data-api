@@ -63,15 +63,5 @@ def clear_cache(pattern: str = "*") -> int:
         if keys:
             return redis_client.delete(*keys)
         return 0
-    except redis.ConnectionError:
-        return 0
-    
-def get_redis_client():
-    try:
-        return redis.Redis(
-            host=os.getenv("REDIS_HOST", "localhost"),
-            port=int(os.getenv("REDIS_PORT", "6379")),
-            decode_responses=True
-        )
     except Exception:
-        return None
+        return 0

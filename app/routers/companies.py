@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Query, Depends, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Query, Depends, HTTPException, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.cache import get_cache, set_cache, make_cache_key
@@ -28,7 +27,7 @@ def list_companies(
     min_employees: int | None = Query(default=None, ge=0, description="Mínimo de funcionários"),
     max_employees: int | None = Query(default=None, ge=0, description="Máximo de funcionários"),
     # Busca geral
-    search: str | None = Query(default=None, description="Busca em nome, setor e cidade"),
+    search: str | None = Query(default=None, max_length=100, description="Busca em nome, setor e cidade"),
     # Ordenação
     sort_by: CompanySortBy = Query(default=CompanySortBy.name, description="Campo para ordenar"),
     order: SortOrder = Query(default=SortOrder.asc, description="Direção"),
@@ -36,6 +35,7 @@ def list_companies(
     page: int = Query(default=1, ge=1, description="Página"),
     limit: int = Query(default=20, ge=1, le=100, description="Itens por página"),
     db: Session = Depends(get_db),
+    response: Response = None,
 ):
     """Lista empresas com filtros, ordenação, paginação e cache."""
 
@@ -52,9 +52,8 @@ def list_companies(
     # 2. Tenta buscar do cache
     cached = get_cache(cache_key)
     if cached:
-        response = JSONResponse(content=cached)
         response.headers["X-Cache"] = "HIT"
-        return response
+        return cached
 
     # 3. Se não tem cache, consulta o banco (código igual ao anterior)
     query = db.query(CompanyModel)
@@ -97,18 +96,17 @@ def list_companies(
     result = CompanyList(data=results, total=total, page=page, limit=limit)
     result_dict = result.model_dump()
 
-    # 5. Salva no cache com TTL de 60 segundos
+    # 5. Salva no cache com TTL de 60 segundos (lista muda com frequência moderada)
     set_cache(cache_key, result_dict, ttl=60)
 
     # 6. Retorna com header indicando MISS
-    response = JSONResponse(content=result_dict)
     response.headers["X-Cache"] = "MISS"
-    return response
+    return result
 
 
 
 @router.get("/stats", response_model=CompanyStats)
-def company_stats(db: Session = Depends(get_db)):
+def company_stats(db: Session = Depends(get_db), response: Response = None):
     """Estatísticas agregadas por setor (com cache de 5 minutos)."""
 
     # Stats muda pouco, TTL maior (300s = 5 min)
@@ -116,9 +114,8 @@ def company_stats(db: Session = Depends(get_db)):
 
     cached = get_cache(cache_key)
     if cached:
-        response = JSONResponse(content=cached)
         response.headers["X-Cache"] = "HIT"
-        return response
+        return cached
 
     total = db.query(CompanyModel).count()
 
@@ -151,11 +148,11 @@ def company_stats(db: Session = Depends(get_db)):
     result = CompanyStats(total_companies=total, sectors=sectors)
     result_dict = result.model_dump()
 
+    # TTL de 300s (5 min) pois estatísticas agregadas mudam com muito menos frequência
     set_cache(cache_key, result_dict, ttl=300)
 
-    response = JSONResponse(content=result_dict)
     response.headers["X-Cache"] = "MISS"
-    return response
+    return result
 
 
 

@@ -26,7 +26,7 @@ def root():
     return {
         "status": "online",
         "api": "Executive Data API",
-        "version": "0.2.0",
+        "version": "1.0.0",
     }
 
 @app.get("/cache/status", tags=["Cache"])
